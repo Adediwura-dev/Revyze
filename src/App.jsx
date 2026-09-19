@@ -15,6 +15,8 @@ function App() {
       <Route path="/register" element={<Register />} />
 
       <Route path="/onboarding" element={<Onboarding />} />
+
+      <Route path="/dashboard" element={<div>Dashboard coming soon</div>} />
     </Routes>
   );
 }
