@@ -1,6 +1,11 @@
 import { ArrowRight, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 const WelcomeSection = () => {
+  const { user } = useAuth();
+  const displayName = user?.fullName || "Student";
+
   return (
     <section>
       <p className="text-sm font-semibold text-indigo-600">
@@ -8,7 +13,7 @@ const WelcomeSection = () => {
       </p>
 
       <h1 className="mt-2 font-google text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-        Good morning, Bushra 👋
+        Good morning, {displayName} 👋
       </h1>
 
       <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">
@@ -35,13 +40,13 @@ const WelcomeSection = () => {
             </div>
           </div>
 
-          <button
-            type="button"
+          <Link
+            to="/materials"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
           >
             Add study material
             <ArrowRight size={17} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

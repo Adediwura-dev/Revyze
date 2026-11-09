@@ -1,13 +1,30 @@
-import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, LockKeyhole, Mail, AlertCircle, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (event) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    navigate("/dashboard");
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Failed to log in. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,6 +91,13 @@ const Login = () => {
               </p>
             </div>
 
+            {error && (
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-600" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               <div>
@@ -93,6 +117,8 @@ const Login = () => {
                   <input
                     id="email"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
                     className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -126,6 +152,8 @@ const Login = () => {
                   <input
                     id="password"
                     type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     required
                     className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -135,10 +163,20 @@ const Login = () => {
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Log in
-                <ArrowRight size={18} />
+                {isLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    Log in
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
             </form>
 

@@ -1,13 +1,42 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleSubmit = (event) => {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
 
-    navigate("/onboarding");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please verify and try again.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register(fullName, email, password);
+      navigate("/onboarding");
+    } catch (err) {
+      setError(err.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,6 +125,13 @@ const Register = () => {
               </p>
             </div>
 
+            {error && (
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-600" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               <div>
                 <label
@@ -108,6 +144,8 @@ const Register = () => {
                 <input
                   id="fullName"
                   type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
                   required
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -125,6 +163,8 @@ const Register = () => {
                 <input
                   id="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -142,7 +182,9 @@ const Register = () => {
                 <input
                   id="password"
                   type="password"
-                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a password (min. 6 characters)"
                   required
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                 />
@@ -159,6 +201,8 @@ const Register = () => {
                 <input
                   id="confirmPassword"
                   type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your password"
                   required
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -167,10 +211,20 @@ const Register = () => {
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create my account
-                <ArrowRight size={18} />
+                {isLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Create my account
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
             </form>
 
