@@ -9,6 +9,7 @@ import Register from "./pages/Register/Register";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Materials from "./pages/Materials/Materials";
+import Practice from "./pages/Practice/Practice";
 
 const App = () => {
   return (
@@ -41,6 +42,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Materials />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/practice"
+          element={
+            <ProtectedRoute>
+              <Practice />
             </ProtectedRoute>
           }
         />
