@@ -9,6 +9,9 @@ import Register from "./pages/Register/Register";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Materials from "./pages/Materials/Materials";
+import Practice from "./pages/Practice/Practice";
+import Progress from "./pages/Progress/Progress";
+import Assistant from "./pages/Assistant/Assistant";
 
 const App = () => {
   return (
@@ -41,6 +44,30 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Materials />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/practice"
+          element={
+            <ProtectedRoute>
+              <Practice />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/progress"
+          element={
+            <ProtectedRoute>
+              <Progress />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assistant"
+          element={
+            <ProtectedRoute>
+              <Assistant />
             </ProtectedRoute>
           }
         />
