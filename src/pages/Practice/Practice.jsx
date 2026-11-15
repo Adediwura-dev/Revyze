@@ -166,9 +166,10 @@ const Practice = () => {
     setErrorMessage("");
 
     try {
-      const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
-        questionId,
-        selectedOption,
+      const formattedAnswers = (quiz.questions || []).map((q, idx) => ({
+        questionId: q.id,
+        questionIndex: q.questionIndex !== undefined ? q.questionIndex : idx,
+        selectedOption: answers[q.id] || null,
       }));
 
       const res = await apiClient.post(`/practice/quizzes/${quiz.id}/submit`, {
