@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
-  MessageCircle,
   Send,
   Sparkles,
   Bot,
@@ -10,9 +9,6 @@ import {
   Loader2,
   Plus,
   Trash2,
-  BookOpen,
-  Brain,
-  HelpCircle,
 } from "lucide-react";
 import { apiClient } from "../../api/client";
 
@@ -38,30 +34,6 @@ const Assistant = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    loadSessions();
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, sending]);
-
-  const loadSessions = async () => {
-    try {
-      setLoadingSessions(true);
-      const res = await apiClient.get("/assistant/sessions");
-      const sessionList = res.data || [];
-      setSessions(sessionList);
-      if (sessionList.length > 0 && !currentSessionId) {
-        loadSessionMessages(sessionList[0].id);
-      }
-    } catch (err) {
-      // Soft fail
-    } finally {
-      setLoadingSessions(false);
-    }
-  };
-
   const loadSessionMessages = async (sessionId) => {
     try {
       setCurrentSessionId(sessionId);
@@ -71,6 +43,30 @@ const Assistant = () => {
       setErrorMessage(err.message || "Failed to load session messages");
     }
   };
+
+  const loadSessions = async (showLoading = false) => {
+    try {
+      if (showLoading) setLoadingSessions(true);
+      const res = await apiClient.get("/assistant/sessions");
+      const sessionList = res.data || [];
+      setSessions(sessionList);
+      if (sessionList.length > 0 && !currentSessionId) {
+        loadSessionMessages(sessionList[0].id);
+      }
+    } catch {
+      // Soft fail
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, sending]);
 
   const handleStartNewChat = () => {
     setCurrentSessionId(null);
@@ -88,10 +84,10 @@ const Assistant = () => {
 
     // Optimistically add user message
     const tempUserMsg = {
-      id: "temp-" + Date.now(),
+      id: "temp-" + (messages.length + 1),
       sender: "USER",
       content: text,
-      createdAt: new Date().toISOString(),
+      createdAt: "",
     };
     setMessages((prev) => [...prev, tempUserMsg]);
 
@@ -229,6 +225,18 @@ const Assistant = () => {
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
             <div className="mx-auto max-w-3xl space-y-6">
+              {errorMessage && (
+                <div className="flex items-center justify-between rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  <p>{errorMessage}</p>
+                  <button
+                    type="button"
+                    onClick={() => setErrorMessage("")}
+                    className="text-xs font-semibold uppercase hover:underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
               {messages.length === 0 ? (
                 /* Welcome / Onboarding State */
                 <div className="py-12 text-center">

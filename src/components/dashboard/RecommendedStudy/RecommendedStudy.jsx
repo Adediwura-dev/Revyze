@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Compass, Sparkles, Loader2, BookOpen, Clock, Calendar, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Compass, Sparkles, Loader2, Clock, Calendar, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiClient } from "../../../api/client";
 

@@ -2,16 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
-  BarChart3,
   Brain,
   Clock,
   BookOpen,
   Award,
-  CheckCircle2,
   AlertCircle,
   ChevronRight,
   Loader2,
-  TrendingUp,
 } from "lucide-react";
 import { apiClient } from "../../api/client";
 

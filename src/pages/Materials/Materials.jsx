@@ -58,9 +58,9 @@ const Materials = () => {
 
   const fileInputRef = useRef(null);
 
-  const loadMaterials = async () => {
+  const loadMaterials = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await apiClient.get("/materials");
       setMaterials(res.data || []);
     } catch (err) {

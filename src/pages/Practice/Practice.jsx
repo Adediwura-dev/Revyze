@@ -6,12 +6,10 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Award,
   RotateCcw,
   Sparkles,
   ChevronRight,
   ChevronLeft,
-  BookOpen,
   History,
   Loader2,
   AlertCircle,
@@ -38,6 +36,23 @@ const TOPIC_PRESETS = [
     badge: "Algorithms",
   },
 ];
+
+const getQuestionOptions = (q) => {
+  if (!q) return [];
+  const keys = ["A", "B", "C", "D"];
+  if (Array.isArray(q.options)) {
+    return q.options.map((opt, i) => ({
+      key: keys[i] || String(i),
+      text: opt,
+    }));
+  }
+  return [
+    { key: "A", text: q.optionA },
+    { key: "B", text: q.optionB },
+    { key: "C", text: q.optionC },
+    { key: "D", text: q.optionD },
+  ].filter((opt) => opt.text !== undefined);
+};
 
 const Practice = () => {
   // Navigation / views: "setup" | "taking" | "results"
@@ -77,35 +92,12 @@ const Practice = () => {
       try {
         const res = await apiClient.get("/materials");
         setMaterials(res.data || []);
-      } catch (err) {
+      } catch {
         // Soft fail - materials are optional for quiz generation
       }
     };
     loadMaterials();
   }, []);
-
-  // Load history when switching to history tab
-  useEffect(() => {
-    if (activeTab === "history") {
-      fetchHistory();
-    }
-  }, [activeTab]);
-
-  // Quiz timer
-  useEffect(() => {
-    if (view === "taking") {
-      setElapsedSeconds(0);
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [view]);
 
   const fetchHistory = async () => {
     setLoadingHistory(true);
@@ -118,6 +110,21 @@ const Practice = () => {
       setLoadingHistory(false);
     }
   };
+
+  // Quiz timer
+  useEffect(() => {
+    if (view === "taking") {
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [view]);
 
   const handleStartQuiz = async () => {
     setGenerating(true);
@@ -135,6 +142,7 @@ const Practice = () => {
         setQuiz(res.data);
         setCurrentQuestionIndex(0);
         setAnswers({});
+        setElapsedSeconds(0);
         setResult(null);
         setView("taking");
       }
@@ -158,8 +166,13 @@ const Practice = () => {
     setErrorMessage("");
 
     try {
+      const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
+        questionId,
+        selectedOption,
+      }));
+
       const res = await apiClient.post(`/practice/quizzes/${quiz.id}/submit`, {
-        answers,
+        answers: formattedAnswers,
         timeSpentSeconds: elapsedSeconds,
       });
 
@@ -250,7 +263,10 @@ const Practice = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("history")}
+                onClick={() => {
+                  setActiveTab("history");
+                  fetchHistory();
+                }}
                 className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition ${
                   activeTab === "history"
                     ? "border-indigo-600 text-indigo-600"
@@ -399,7 +415,11 @@ const Practice = () => {
                 ) : (
                   <div className="space-y-4">
                     {history.map((att) => {
-                      const isPassing = att.scorePercentage >= 70;
+                      const scorePercent = att.percentage ?? att.scorePercentage ?? 0;
+                      const isPassing = scorePercent >= 70;
+                      const dateStr = att.completedAt || att.attemptedAt;
+                      const correctCount = att.score ?? att.correctCount ?? 0;
+                      const topicName = att.topic || att.quizTitle?.replace(/^Smart Practice:\s*/i, "") || "Practice";
                       return (
                         <div
                           key={att.id}
@@ -408,21 +428,24 @@ const Practice = () => {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                                {att.topic}
+                                {topicName}
                               </span>
-                              <span className="text-xs text-slate-400">
-                                {new Date(att.attemptedAt).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                              </span>
+                              {dateStr && (
+                                <span className="text-xs text-slate-400">
+                                  {new Date(dateStr).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              )}
                             </div>
                             <h4 className="mt-1 font-google text-base font-semibold text-slate-900">
                               {att.quizTitle}
                             </h4>
                             <p className="mt-1 text-xs text-slate-500">
-                              Duration: {Math.floor(att.timeSpentSeconds / 60)}m {att.timeSpentSeconds % 60}s · {att.correctCount}/{att.totalQuestions} correct
+                              {att.timeSpentSeconds ? `Duration: ${Math.floor(att.timeSpentSeconds / 60)}m ${att.timeSpentSeconds % 60}s · ` : ""}
+                              {correctCount}/{att.totalQuestions} correct
                             </p>
                           </div>
 
@@ -432,7 +455,7 @@ const Practice = () => {
                                 isPassing ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
                               }`}
                             >
-                              {att.scorePercentage}%
+                              {scorePercent}%
                             </div>
                           </div>
                         </div>
@@ -516,12 +539,7 @@ const Practice = () => {
 
               {/* Options */}
               <div className="mt-6 space-y-3">
-                {[
-                  { key: "A", text: currentQuestion.optionA },
-                  { key: "B", text: currentQuestion.optionB },
-                  { key: "C", text: currentQuestion.optionC },
-                  { key: "D", text: currentQuestion.optionD },
-                ].map((opt) => {
+                {getQuestionOptions(currentQuestion).map((opt) => {
                   const isSelected = answers[currentQuestion.id] === opt.key;
                   return (
                     <button
@@ -605,28 +623,28 @@ const Practice = () => {
               <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
                 <div>
                   <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                    {result.topic} Quiz Complete
+                    {result.topic || quiz?.topic || selectedTopic} Quiz Complete
                   </span>
                   <h2 className="mt-2 font-google text-2xl font-bold text-slate-900 sm:text-3xl">
-                    {result.quizTitle}
+                    {result.quizTitle || quiz?.title || "Practice Quiz"}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Completed in {Math.floor(result.timeSpentSeconds / 60)}m {result.timeSpentSeconds % 60}s · Topic Mastery updated to {result.topicMasteryPercentage}%
+                    Completed in {Math.floor((result.timeSpentSeconds ?? elapsedSeconds) / 60)}m {(result.timeSpentSeconds ?? elapsedSeconds) % 60}s · Topic Mastery updated to {result.topicMasteryPercentage ?? result.percentage ?? result.scorePercentage ?? 0}%
                   </p>
                 </div>
 
                 <div className="mt-6 flex flex-col items-center sm:mt-0">
                   <div
                     className={`flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-extrabold ${
-                      result.scorePercentage >= 70
+                      (result.percentage ?? result.scorePercentage ?? 0) >= 70
                         ? "bg-emerald-50 text-emerald-700 ring-4 ring-emerald-100"
                         : "bg-amber-50 text-amber-700 ring-4 ring-amber-100"
                     }`}
                   >
-                    {result.scorePercentage}%
+                    {result.percentage ?? result.scorePercentage ?? 0}%
                   </div>
                   <span className="mt-2 text-xs font-semibold text-slate-500">
-                    {result.correctAnswers} of {result.totalQuestions} correct
+                    {result.score ?? result.correctAnswers ?? 0} of {result.totalQuestions ?? quiz?.questions?.length ?? 0} correct
                   </span>
                 </div>
               </div>
@@ -663,11 +681,12 @@ const Practice = () => {
               </p>
 
               <div className="mt-6 space-y-6">
-                {result.questionResults?.map((q, idx) => {
-                  const isCorrect = q.isCorrect;
+                {(result.results || result.questionResults || []).map((q, idx) => {
+                  const isCorrect = q.correct ?? q.isCorrect;
+                  const questionOptions = getQuestionOptions(q);
                   return (
                     <div
-                      key={q.questionId}
+                      key={q.questionId || q.id || idx}
                       className={`rounded-2xl border bg-white p-6 shadow-sm ${
                         isCorrect ? "border-emerald-200" : "border-rose-200"
                       }`}
@@ -693,12 +712,7 @@ const Practice = () => {
 
                       {/* Options breakdown */}
                       <div className="mt-4 space-y-2">
-                        {[
-                          { key: "A", text: q.optionA },
-                          { key: "B", text: q.optionB },
-                          { key: "C", text: q.optionC },
-                          { key: "D", text: q.optionD },
-                        ].map((opt) => {
+                        {questionOptions.map((opt) => {
                           const isSelectedByUser = q.selectedOption === opt.key;
                           const isTheCorrectOption = q.correctOption === opt.key;
 

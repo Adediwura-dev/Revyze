@@ -33,7 +33,7 @@ async function request(endpoint, options = {}) {
   let response;
   try {
     response = await fetch(url, config);
-  } catch (err) {
+  } catch {
     throw new ApiError(
       "Unable to connect to the Revyze server. Please ensure the backend is running.",
       0,

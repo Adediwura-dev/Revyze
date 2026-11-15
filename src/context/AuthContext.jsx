@@ -8,6 +8,12 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem("revyze_token"));
   const [loading, setLoading] = useState(true);
 
+  const logout = () => {
+    localStorage.removeItem("revyze_token");
+    setToken(null);
+    setUser(null);
+  };
+
   useEffect(() => {
     const restoreSession = async () => {
       const storedToken = localStorage.getItem("revyze_token");
@@ -58,12 +64,6 @@ export const AuthProvider = ({ children }) => {
     setUser(receivedUser);
 
     return receivedUser;
-  };
-
-  const logout = () => {
-    localStorage.removeItem("revyze_token");
-    setToken(null);
-    setUser(null);
   };
 
   const value = {
